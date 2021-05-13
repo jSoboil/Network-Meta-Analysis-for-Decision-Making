@@ -1,5 +1,5 @@
 # Network-Meta-Analysis-for-Decision-Making
-Walk through and exercise scripts from 'Network Meta-Analysis for Decision-Making' by Dias S., et al. 2018
+Chapter walk through and exercise scripts from the book 'Network Meta-Analysis for Decision-Making' by Dias S., et al. 2018
 
 ## Book overview: a practical guide to network meta-analysis with examples and code
 
