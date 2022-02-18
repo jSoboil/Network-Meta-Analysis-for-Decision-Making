@@ -1,0 +1,17 @@
+# Binomial likelihood, logit link
+# Pairwise meta-analysis
+# Fixed effect model
+model {                    # *** PROGRAMME STARTS
+ for (i in 1:n_s) {        # Loop through studies
+  mu[i] ~ dnorm(0, 0.0001) # vague prior for trial baselines
+  for (k in 1:n_arms) {
+   r[i, k] ~ dbinom(p[i, k], n[i, k]) # binomial likelihood
+   logit(p[i, k]) <- mu[i] + d[k]     # model for linear predictor
+  }
+ }
+ d[1] <- 0                 # treatment effect is zero for reference treatment
+ d[2:n_arms] ~ dnorm(0, 0.0001)   # vague prior for treatment effect
+ 
+}                          # *** PROGRAMME ENDS
+
+
