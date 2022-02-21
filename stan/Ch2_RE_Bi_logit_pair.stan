@@ -8,16 +8,16 @@ data {
  int <lower = 0> n[n_s, n_arms];   // n obs
 }
 parameters {
- real mu[n_s];                       // i'th trial baseline
- real d_draws;                       // variable to transform to d
- real delta_draws[n_s, n_arms];      // variable to transform to delta
- real <lower = 0, upper = 2> tau;    // between-trial stdev variable
+ real mu[n_s];                       // i'th trial baseline parameter
+ real d_draws;                       // parameter to transform to d
+ real delta_draws[n_s, n_arms];      // parameter to transform to delta
+ real <lower = 0, upper = 2> tau;    // between-trial stdev parameter
 }
 transformed parameters {
- real prob_harm;                    // transform OR to p variable
+ real prob_harm;                    // transform OR to p parameter
  real d[n_arms];                    // ave. treatment effect (ATE)
- real OR[n_arms];                   // OR variable
- real delta[n_s, n_arms];           // trial-specific LORs variable
+ real OR[n_arms];                   // OR parameter
+ real delta[n_s, n_arms];           // trial-specific LORs parameter
  d[1] = 0;                          // 0 effect for reference treatment
  d[2] = d_draws;                    // add sample to [i + 1] ATE index
  for (i in 1:n_s) {                 // LOOP THROUGH STUDIES
@@ -34,9 +34,9 @@ model {
   for (k in 1:2) {                     // LOOP THROUGH ARMS
   // Likelihood
    r[i, k] ~ binomial_logit(n[i, k], mu[i] + d[k] + delta[i, k]);
-   }
- }
+   }                                   // END LOOP
+ }                                     // END LOOP
   // Priors
-  d_draws ~ normal(0, 100);         // on ATE for treatment arm
+  d_draws ~ normal(0, 100);            // ATE prior
 }
 // END FILE
