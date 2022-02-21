@@ -11,6 +11,8 @@ model {                    # *** PROGRAMME STARTS
  }
  d[1] <- 0                 # treatment effect is zero for reference treatment
  d[2:n_arms] ~ dnorm(0, 0.0001)   # vague prior for treatment effect
+ OR <- exp(d[2])
+ prob_harm <- step(d[2])
  
 }                          # *** PROGRAMME ENDS
 

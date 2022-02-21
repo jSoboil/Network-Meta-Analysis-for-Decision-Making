@@ -1,0 +1,24 @@
+# Binomial likelihood, logit link
+# Pairwise meta-analysis
+# Random effects model
+model {                    # *** PROGRAMME STARTS
+ for (i in 1:n_s) {        # LOOP THROUGH STUDIES
+ delta[i, 1] <- 0          # treatment effect 0 for control arm
+  mu[i] ~ dnorm(0, 0.0001) # vague prior for trial baselines
+  delta[i, 2] ~ dnorm(d[2], tau) # trial-specific LOR distributions
+  
+  for (k in 1:n_arms) {    # LOOP THROUGH ARMS
+   r[i, k] ~ dbinom(p[i, k], n[i, k]) # binomial likelihood
+   logit(p[i, k]) <- mu[i] + d[k] + delta[i, k]  # model for linear predictor
+  }
+ }
+ d[1] <- 0                 # treatment effect is zero for reference treatment
+ d[2:n_arms] ~ dnorm(0, 0.0001) # vague prior for treatment effect
+ tau <- pow(sd, -2)        # between-trial precision
+ sd ~ dunif(0, 2)          # prior for between-trial stdev
+ OR <- exp(d[2])           # LOR to OR
+ prob_harm <- step(d[2])   # OR to p
+ 
+}                          # *** PROGRAMME ENDS
+
+

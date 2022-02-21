@@ -8,28 +8,29 @@ data {
  int <lower = 0> n[n_s, n_arms];        // n obs
 }
 parameters {
- real mu[n_s];                                 // ave. event baseline
- real <lower = 0, upper = 10> sigmasq_d;       // stdev of d, implicit uniform
+ real mu[n_s];                                 // ave. i'th trial baseline
+ real <lower = 0, upper = 10> sigmasq_d;       // stdev of ATE, implicit uniform
  real d_sample;   
 }
 transformed parameters {
- real <lower = 0> sigma_d;            // parameter for d stdev
- real d[2];                      // ave. treatment effect
- d[1] = 0;
- d[2] = d_sample;
-                                      // treatment
- sigma_d = sqrt(sigmasq_d);           // var to stdev
+ real d[n_arms];                   // ave. treatment effect
+ real OR[n_arms];
+ real <lower = 0, upper = 1> prob_harm;
+ d[1] = 0;                         // 0 effect for reference treatment
+ d[2] = d_sample;                  // add sample to [i + 1] ATE index
+ OR = exp(d);
+ prob_harm = step(d[2]);
+ 
 }
 model {
+ // Priors
+ d_sample ~ normal(0, sqrt(1.0E4));             // on ATE
  for (i in 1:n_s) {
-  // Prior on trial baseline for Pr of event
-  mu[i] ~ normal(0, sqrt(1.0E4));
+  mu[i] ~ normal(0, sqrt(1.0E4));               // on i'th trial baseline
   for (k in 1:2) {
    // Likelihood
    r[i, k] ~ binomial_logit(n[i, k], mu[i] + d[k]);
    }
   }
-  
-  d_sample ~ normal(0, sigma_d);
 }
 // END FILE
