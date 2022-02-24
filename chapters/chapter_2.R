@@ -1,5 +1,6 @@
 # Libraries ---------------------------------------------------------------
-pkgs <- c("R2jags", "rstan", "bayesplot", "MetaStan", "dplyr", "tidyr")
+pkgs <- c("R2jags", "rstan", "bayesplot", "MetaStan", "dplyr", "tidyr", 
+          "igraph")
 sapply(pkgs, require, character.only = TRUE)
 options(mc.cores = parallel::detectCores())
 
@@ -210,10 +211,11 @@ print(jags_Model)
 
 #### Stan model --------------------------------------------------------------
 # Since Stan can't handle NA values, we have to index the data in a different 
-# way. Unlike BUGS, we index by groups directly by col, rather than row. In
-# other words, we group the studies and then match by treatment comparison, 
-# e.g. 1 vs 1, 1 vs 3, 1 vs 4, then 2 vs 1, 2 vs 2, and so on, rather than by 
-# row.
+# way. This can be done in a similar way to the more efficient approach for 
+# parsing data to BUGS. Basically, we group rows by the number of arms in each 
+# study, so the data for a two arm study will comprise two rows, etc. This
+# avoids the use of NA values across columns, especially when only a few 
+# treatments have more than one or two comparisons.
 
 # N studies:
 n_s <- 11
@@ -238,29 +240,29 @@ n_3 <- data_list$n[, 3]
 # Study number
 thrombo_data <- tibble(r_1 = r_1, n_1 = n_1, r_2 = r_2, n_2 = n_2, r_3 = r_3,
                        n_3 = n_3, t_1 = t_1, t_2 = t_2, t_3 = t_3, 
-                       n_arms = n_arms, study = s_n)
+                       n_arms = n_arms, s_n = s_n)
 
 
 # Make into long (tidy) format
 df_thrombo <- thrombo_data |>
- group_by(study) |>
+ group_by(s_n) |>
  gather(key, var, r_1:t_3) |>
  mutate(arm = gsub("[rnt]+_", "\\1", key),
-        key = gsub("\\_*[0-9]", "\\1", key)) |>
+        key = gsub("\\_*[1-7]", "\\1", key)) |>
  spread(key, var) |>
  filter(!is.na(t)) |>
  ungroup() |>
- transmute(study_i = study,
-           treatment_j = t,
-           t_ = recode(treatment_j,
-                        "SK",
-                        "t-PA",
-                        "Acc t-PA",
-                        "SK + t-PA",
-                        "r-PA",
-                        "TNK",
-                        "PTCA"),
+ transmute(study_n = s_n,
+           trt_c = t,
+           trt_n = recode(trt_c,
+                      "SK",
+                      "t-PA",
+                      "Acc t-PA",
+                      "SK + t-PA",
+                      "r-PA",
+                      "TNK",
+                      "PTCA"),
            r = r,
            n = n) |>
-
- arrange(study_i, treatment_j)
+ arrange(study_n, trt_c)
+df_thrombo
