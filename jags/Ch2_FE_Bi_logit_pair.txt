@@ -1,6 +1,6 @@
 # Binomial likelihood, logit link
 # Pairwise meta-analysis
-# Fixed effect model
+# Fixed effects model
 model {                    # *** PROGRAMME STARTS
  for (i in 1:n_s) {        # Loop through studies
   mu[i] ~ dnorm(0, 0.0001) # vague prior for trial baselines

@@ -14,9 +14,9 @@ parameters {
  real <lower = 0, upper = 2> tau;    // between-trial stdev parameter
 }
 transformed parameters {
+ real OR;                           // OR parameter
  real prob_harm;                    // transform OR to p parameter
  real d[n_arms];                    // ave. treatment effect (ATE)
- real OR[n_arms];                   // OR parameter
  real delta[n_s, n_arms];           // trial-specific LORs parameter
  d[1] = 0;                          // 0 effect for reference treatment
  d[2] = d_draws;                    // add sample to [i + 1] ATE index
@@ -24,7 +24,7 @@ transformed parameters {
   delta[i, 1] = 0;                  // i'th ATE == 0 for control arm
   delta[i, 2] = delta_draws[i, 2];  // i'th trial-specific LOR distributions 
  }                                  // END LOOP
- OR = exp(d);                       // OR of treatment effect
+ OR = exp(d[2]);                    // OR of treatment effect
  prob_harm = step(d[2]);            // probability of treatment effect
 }
 model {
