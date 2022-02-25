@@ -4,7 +4,7 @@ pkgs <- c("R2jags", "rstan", "bayesplot", "MetaStan", "dplyr", "tidyr",
 sapply(pkgs, require, character.only = TRUE)
 options(mc.cores = parallel::detectCores())
 
-# The Core Model ----------------------------------------------------------
+# The Core Models ---------------------------------------------------------
 # This chapter provides an overview of the foundations of the standard NMA model, 
 # specifically the binomial model with a logit link function. 
 
@@ -51,7 +51,7 @@ model {                    # *** PROGRAMME STARTS
 "
 writeLines(text = Ch2_FE_Bi_logit_pair, con = "jags/Ch2_FE_Bi_logit_pair.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit_pairs.txt", 
+jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit_pair.txt", 
                    data = data_list, parameters.to.save = c(
                     "d", "OR", "prob_harm"))
 print(jags_Model)
@@ -59,7 +59,9 @@ print(jags_Model)
 #### Stan model --------------------------------------------------------------
 stan_FE_Bi_logit_pair <- stan(file = "stan/Ch2_FE_Bi_logit_pair.stan",
                               data = data_list, chains = 4,
-                              pars = c("d", "OR", "prob_harm"))
+                              pars = c("d", "OR", "prob_harm"), 
+                              control = list(adapt_delta = 0.9)
+                              )
 print(stan_FE_Bi_logit_pair)
 sims_stan_FE_Bi_logit_pair <- extract(stan_FE_Bi_logit_pair)
 hist(sims_stan_FE_Bi_logit_pair$d[, 2])
@@ -106,17 +108,19 @@ model {                    # *** PROGRAMME STARTS
 "
 writeLines(text = Ch2_RE_Bi_logit_pair, con = "jags/Ch2_RE_Bi_logit_pair.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_RE_Bi_logit_pairs.txt", 
+jags_Model <- jags(model.file = "jags/Ch2_RE_Bi_logit_pair.txt", 
                    data = data_list, parameters.to.save = c(
                     "d", "OR", "prob_harm"))
 print(jags_Model)
 
 #### Stan model --------------------------------------------------------------
-stan_FE_Bi_logit_pair <- stan(file = "stan/Ch2_RE_Bi_logit_pair.stan",
+stan_RE_Bi_logit_pair <- stan(file = "stan/Ch2_RE_Bi_logit_pair.stan",
                               data = data_list, chains = 4,
-                              pars = c("d", "OR", "prob_harm"))
-print(stan_FE_Bi_logit_pair)
-sims_stan_FE_Bi_logit_pair <- extract(stan_FE_Bi_logit_pair)
+                              pars = c("d", "OR", "prob_harm"),
+                              control = list(adapt_delta = 0.9)
+                              )
+print(stan_RE_Bi_logit_pair)
+sims_stan_RE_Bi_logit_pair <- extract(stan_FE_Bi_logit_pair)
 hist(sims_stan_FE_Bi_logit_pair$d[, 2])
 
 # Inspection:
@@ -176,46 +180,12 @@ n <- matrix(c(
 # Data list:
 data_list <- list(n_s = n_s, n_t = n_t, n_arms = n_arms, t = t, r = r, n = n)
 
-#### Jags model --------------------------------------------------------------
-# model
-Ch2_FE_Bi_logit <- "# Binomial likelihood, logit link
-# Pairwise meta-analysis
-# Fixed effect model
-model {                    # *** PROGRAMME STARTS
- for (i in 1:n_s) {        # Loop through studies
-  mu[i] ~ dnorm(0, 0.0001) # vague prior for trial baselines
-  for (k in 1:n_arms[i]) {
-   r[i, k] ~ dbinom(p[i, k], n[i, k]) # binomial likelihood
-   logit(p[i, k]) <- mu[i] + d[t[i, k]] - d[t[i, 1]] # model for linear 
-                                                     # predictor
-  }
- }
- 
- d[1] <- 0    # treatment effect is zero for reference treatment
- for (k in 2:n_t) {
-   d[k] ~ dnorm(0, 0.0001)   # vague priors on treatment effects
-  }
- 
- OR <- exp(d[2])  # transform LORs to ORs
- prob_harm <- step(d[2]) # transform OR to p
- 
-}                          # *** PROGRAMME ENDS
-
-"
-writeLines(text = Ch2_FE_Bi_logit, con = "jags/Ch2_FE_Bi_logit.txt")
-
-jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit.txt", 
-                   data = data_list, parameters.to.save = c(
-                    "d", "OR", "prob_harm"))
-print(jags_Model)
-
-#### Stan model --------------------------------------------------------------
 # Since Stan can't handle NA values, we have to index the data in a different 
-# way. This can be done in a similar way to the more efficient approach for 
-# parsing data to BUGS. Basically, we group rows by the number of arms in each 
-# study, so the data for a two arm study will comprise two rows, etc. This
-# avoids the use of NA values across columns, especially when only a few 
-# treatments have more than one or two comparisons.
+# way. This can be done in the same way to the more efficient approach for 
+# parsing data to BUGS, using nested indexing. Basically, we group rows by the 
+# number of arms in each study, so the data for a two arm study will comprise 
+# two rows, and so on. This avoids the use of NA values across columns, 
+# especially when only a few studies have more than one comparison.
 
 # N studies:
 n_s <- 11
@@ -240,29 +210,57 @@ n_3 <- data_list$n[, 3]
 # Study number
 thrombo_data <- tibble(r_1 = r_1, n_1 = n_1, r_2 = r_2, n_2 = n_2, r_3 = r_3,
                        n_3 = n_3, t_1 = t_1, t_2 = t_2, t_3 = t_3, 
-                       n_arms = n_arms, s_n = s_n)
+                       n_arms = n_arms, s_n = s_n, t_b = t_1)
 
 
 # Make into long (tidy) format
 df_thrombo <- thrombo_data |>
  group_by(s_n) |>
  gather(key, var, r_1:t_3) |>
- mutate(arm = gsub("[rnt]+_", "\\1", key),
+ mutate(n_arm = gsub("[rnt]+_", "\\1", key),
         key = gsub("\\_*[1-7]", "\\1", key)) |>
  spread(key, var) |>
  filter(!is.na(t)) |>
  ungroup() |>
- transmute(study_n = s_n,
-           trt_c = t,
-           trt_n = recode(trt_c,
-                      "SK",
-                      "t-PA",
-                      "Acc t-PA",
-                      "SK + t-PA",
-                      "r-PA",
-                      "TNK",
-                      "PTCA"),
+ transmute(s = s_n,
+           t = t,
            r = r,
-           n = n) |>
- arrange(study_n, trt_c)
+           n = n, 
+           t_b = t_b) |>
+ arrange(s, t)
 df_thrombo
+df_thrombo <- as.list(df_thrombo)
+
+#### Jags model --------------------------------------------------------------
+# model
+Ch2_FE_Bi_logit <- "# Binomial likelihood, logit link
+# Pairwise meta-analysis
+# Random effects model
+model {                    # *** PROGRAMME STARTS
+ for (j in 1:36) {         # LOOP THROUGH STUDIES
+  mu[j] ~ dnorm(0, 0.0001) # vague prior for trial baselines
+  }
+ 
+ for (k in 2:7) {          # LOOP THROUGH TREATMENTS
+  d[k] ~ dnorm(0, 0.0001)  # prior on treatment effects
+  OR[k] <- exp(d[k])           # LOR to OR
+  prob_harm[k] <- step(d[k])   # OR to p
+ }
+ 
+  for (i in 1:73) {        # LOOP THROUGH DATA
+   r[i] ~ dbinom(p[i], n[i]) # binomial likelihood
+   logit(p[i]) <- mu[s[i]] + d[t[i]] - d[t_b[i]] # model for linear predictor
+  }
+  d[1] <- 0                # treatment effect is zero for reference treatment
+}                          # *** PROGRAMME ENDS
+
+"
+writeLines(text = Ch2_FE_Bi_logit, con = "jags/Ch2_FE_Bi_logit.txt")
+
+jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit.txt", 
+                   data = df_thrombo, parameters.to.save = c(
+                    "d", "OR", "prob_harm")
+                   )
+print(jags_Model)
+
+#### Stan model --------------------------------------------------------------
