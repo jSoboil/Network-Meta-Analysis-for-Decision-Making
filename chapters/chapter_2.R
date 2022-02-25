@@ -264,3 +264,17 @@ jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit.txt",
 print(jags_Model)
 
 #### Stan model --------------------------------------------------------------
+stan_FE_Bi_logit <- stan(file = "stan/Ch2_FE_Bi_logit.stan",
+                         data = df_thrombo, chains = 4,
+                         pars = c("d", "OR", "prob_harm"),
+                         control = list(adapt_delta = 0.9)
+                         )
+print(stan_FE_Bi_logit, digits = 4)
+
+# Inspection:
+mcmc_dens(stan_FE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+mcmc_trace(stan_FE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+
+# Success! Both JAGS and Stan are giving similar output...
