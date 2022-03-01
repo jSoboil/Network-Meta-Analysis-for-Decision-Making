@@ -1,6 +1,6 @@
 # Libraries ---------------------------------------------------------------
-pkgs <- c("R2jags", "rstan", "bayesplot", "MetaStan", "dplyr", "tidyr", 
-          "igraph")
+pkgs <- c("R2jags", "rstan", "rstanarm", "bayesplot", "dplyr", 
+          "tidyr", "igraph")
 sapply(pkgs, require, character.only = TRUE)
 options(mc.cores = parallel::detectCores())
 
@@ -270,11 +270,16 @@ stan_FE_Bi_logit <- stan(file = "stan/Ch2_FE_Bi_logit.stan",
                          control = list(adapt_delta = 0.9)
                          )
 print(stan_FE_Bi_logit, digits = 4)
+# Success! Both JAGS and Stan are giving similar output...
 
-# Inspection:
+# Posterior inspection:
+plot(stan_FE_Bi_logit)
 mcmc_dens(stan_FE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
                                           "d[6]", "d[7]"))
 mcmc_trace(stan_FE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
                                           "d[6]", "d[7]"))
-
-# Success! Both JAGS and Stan are giving similar output...
+mcmc_areas(stan_FE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+sims_FE_Bi_logit <- rstan::extract(stan_FE_Bi_logit)
+# LORs that 1 > 4:
+mean(sims_FE_Bi_logit$d[, 1] > sims_FE_Bi_logit$d[, 4])
