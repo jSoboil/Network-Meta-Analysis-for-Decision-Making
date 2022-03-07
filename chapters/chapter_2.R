@@ -292,9 +292,9 @@ data_list <- list(n_s = n_s, n_t = n_t, n_a = n_a, t = t, r = r, n = n,
 
 stan_RE_Bi_logit <- stan(file = "stan/Ch2_RE_Bi_logit.stan",
                          data = data_list, chains = 4,
-                         pars = c("d", "OR")
+                         pars = c("d")
                          )
-print(stan_FE_Bi_logit, digits = 4)
+print(stan_RE_Bi_logit, digits = 4)
 # Success! Both JAGS and Stan are giving similar output...
 
 # Posterior inspection:
@@ -307,10 +307,4 @@ mcmc_areas(stan_RE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]",
                                           "d[6]", "d[7]"))
 sims_RE_Bi_logit <- rstan::extract(stan_RE_Bi_logit)
 # LORs that 1 > 4:
-mean(sims_FE_Bi_logit$d[, 1] > sims_FE_Bi_logit$d[, 4])
-
-
-
-
-
-
+mean(sims_RE_Bi_logit$d[, 1] > sims_RE_Bi_logit$d[, 4])
