@@ -192,7 +192,7 @@ model {                    # *** PROGRAMME STARTS
   mu[i] ~ dnorm(0, 0.0001) # vague prior for i'th trial baselines
   for (j in 1:n_a[i]) {
    r[i, j] ~ dbin(p[i, j], n[i, j]) # binomial model
-   logit(p[i, j]) <- mu[i] + d[t[i, j]] - d[t[i, 1]] # model for linear y_hat
+   logit(p[i, j]) <- mu[i] + d[t[i, j]] - d[t[i, 1]] # y_hat
    }
  }
   d[1] <- 0
@@ -243,3 +243,74 @@ sims_FE_Bi_logit <- rstan::extract(stan_FE_Bi_logit)
 mean(sims_FE_Bi_logit$d[, 1] > sims_FE_Bi_logit$d[, 4])
 
 ### Random effects model ----------------------------------------------------
+#### Jags model --------------------------------------------------------------
+# model
+Ch2_RE_Bi_logit <- "# Binomial likelihood, logit link
+# NMA model
+# Random effects model
+model {                    # *** PROGRAMME STARTS
+ for (i in 1:n_s) {        # LOOP THROUGH STUDIES
+  w[i, 1] <- 0             # 0 adjustment for control arm
+  delta[i, 1] <- 0         # 0 treatment effect for control arm
+  mu[i] ~ dnorm(0, 0.0001) # vague prior for i'th trial baselines
+  for (j in 1:n_a[i]) {    # LOOP THROUGH ARMS
+   r[i, j] ~ dbin(p[i, j], n[i, j]) # binomial model
+   logit(p[i, j]) <- mu[i] + delta[i, j] # y_hat
+  }
+  for (j in 2:n_a[i]) {     # LOOP THROUGH ARMS
+   delta[i, j] ~ dnorm(m_d[i, j], tau_d[i, j]) # trial-specific LOR dists
+   m_d[i, j] <- d[t[i, j]] - d[t[i, 1]] + s_w[i, j] # mu of LOR dists
+   tau_d[i, j] <- tau * 2 * (j - 1) / j # precision for LOR dists
+   w[i, j] <- (delta[i, j] - d[t[i, j]] + d[t[i, 1]]) # multi-arm adjustment
+   s_w[i, j] <- sum(w[i, 1:(j - 1)]) / (j - 1)
+  }
+ }
+  d[1] <- 0
+  for (k in 2:n_t) {
+   d[k] ~ dnorm(0, 0.0001) # vague priors for k treatment effects
+  }
+  sd ~ dunif(0, 2)         # vague prior for between-trial stdev
+  tau <- pow(sd, -2)       # between-trial precision
+}                          # *** PROGRAMME ENDS
+
+"
+writeLines(text = Ch2_RE_Bi_logit, con = "jags/Ch2_RE_Bi_logit.txt")
+
+jags_Model <- jags(model.file = "jags/Ch2_RE_Bi_logit.txt", 
+                   data = data_list, parameters.to.save = c(
+                    "d")
+                   )
+print(jags_Model)
+
+#### Stan model --------------------------------------------------------------
+r[is.na(r)] <- -1
+n[is.na(n)] <- -1
+t[is.na(t)] <- -1
+# Data list:
+data_list <- list(n_s = n_s, n_t = n_t, n_a = n_a, t = t, r = r, n = n, 
+                  max_arms = max(n_a))
+
+stan_RE_Bi_logit <- stan(file = "stan/Ch2_RE_Bi_logit.stan",
+                         data = data_list, chains = 4,
+                         pars = c("d", "OR")
+                         )
+print(stan_FE_Bi_logit, digits = 4)
+# Success! Both JAGS and Stan are giving similar output...
+
+# Posterior inspection:
+plot(stan_RE_Bi_logit)
+mcmc_dens(stan_RE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+mcmc_trace(stan_RE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+mcmc_areas(stan_RE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]", 
+                                          "d[6]", "d[7]"))
+sims_RE_Bi_logit <- rstan::extract(stan_RE_Bi_logit)
+# LORs that 1 > 4:
+mean(sims_FE_Bi_logit$d[, 1] > sims_FE_Bi_logit$d[, 4])
+
+
+
+
+
+

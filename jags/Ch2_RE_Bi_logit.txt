@@ -2,22 +2,28 @@
 # NMA model
 # Random effects model
 model {                    # *** PROGRAMME STARTS
- for (j in 1:36) {         # LOOP THROUGH STUDIES
-  mu[j] ~ dnorm(0, 0.0001) # vague prior for trial baselines
+ for (i in 1:n_s) {        # LOOP THROUGH STUDIES
+  w[i, 1] <- 0             # 0 adjustment for control arm
+  delta[i, 1] <- 0         # 0 treatment effect for control arm
+  mu[i] ~ dnorm(0, 0.0001) # vague prior for i'th trial baselines
+  for (j in 1:n_a[i]) {    # LOOP THROUGH ARMS
+   r[i, j] ~ dbin(p[i, j], n[i, j]) # binomial model
+   logit(p[i, j]) <- mu[i] + delta[i, j] # y_hat
   }
- 
- for (k in 2:7) {          # LOOP THROUGH TREATMENTS
-  d[k] ~ dnorm(0, 0.0001)  # prior on treatment effects
-  OR[k] <- exp(d[k])           # LOR to OR
-  prob_harm[k] <- step(d[k])   # OR to p
+  for (j in 2:n_a[i]) {     # LOOP THROUGH ARMS
+   delta[i, j] ~ dnorm(m_d[i, j], tau_d[i, j]) # trial-specific LOR dists
+   m_d[i, j] <- d[t[i, j]] - d[t[i, 1]] + s_w[i, j] # mu of LOR dists
+   tau_d[i, j] <- tau * 2 * (j - 1) / j # precision for LOR dists
+   w[i, j] <- (delta[i, j] - d[t[i, j]] + d[t[i, 1]]) # multi-arm adjustment
+   s_w[i, j] <- sum(w[i, 1:(j - 1)]) / (j - 1)
+  }
  }
- 
-  for (i in 1:73) {        # LOOP THROUGH DATA
-   w[t[i]] <- 0
-   r[i] ~ dbinom(p[i], n[i]) # binomial likelihood
-   logit(p[i]) <- mu[s[i]] + d[t[i]] - d[t_b[i]] # model for linear predictor
+  d[1] <- 0
+  for (k in 2:n_t) {
+   d[k] ~ dnorm(0, 0.0001) # vague priors for k treatment effects
   }
-  d[1] <- 0                # treatment effect is zero for reference treatment
+  sd ~ dunif(0, 2)         # vague prior for between-trial stdev
+  tau <- pow(sd, -2)       # between-trial precision
 }                          # *** PROGRAMME ENDS
 
 

@@ -11,14 +11,14 @@ data {
  int t[n_s, max_arms];           // t treatments [studies, max arms]
 }
 parameters {
- real mu[n_s];                   // declare baseline variable
- real d_samples[n_t - 1];        // declare d_sample variable
+ real mu[n_s];                   // declare baseline parameter
+ real d_samples[n_t - 1];        // declare d_sample parameter
 }
 transformed parameters {
- real delta[n_s, max_arms];     // declare delta variable
- real p[n_s, max_arms];         // declare p variable
- real d_1;                      // d_{1} variable for reference treatment
- real d[n_t];                   // d_{n_t} variable for comparison treatment
+ real delta[n_s, max_arms];     // declare delta parameter
+ real p[n_s, max_arms];         // declare p parameter
+ real d_1;                      // d_{1} parameter for reference treatment
+ real d[n_t];                   // d_{n_t} parameter for comparison treatment
  d_1 = 0;                       // treatment effect 0 for reference treatment
  d[1] = d_1;                    
  d[2:n_t] = d_samples;          // index [i + 1] treatment effects
@@ -32,9 +32,9 @@ transformed parameters {
 model {
  // Priors
  d_samples ~ normal(0, 100000); // vague prior for k'th treatment effect
- for (i in 1:n_s) {              // LOOP THROUGH STUDIES
-  mu[i] ~ normal(0, 100000);        // vague prior for i'th trial baseline
-   for (j in 1:n_a[i]) {         // LOOP THROUGH ARMS
+ for (i in 1:n_s) {             // LOOP THROUGH STUDIES
+  mu[i] ~ normal(0, 100000);    // vague prior for i'th trial baseline
+   for (j in 1:n_a[i]) {        // LOOP THROUGH ARMS
     // Likelihood
      r[i, j] ~ binomial(n[i, j], p[i, j]);
    }
