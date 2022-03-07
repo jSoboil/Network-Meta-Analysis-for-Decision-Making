@@ -1,22 +1,18 @@
 # Binomial likelihood, logit link
-# Pairwise meta-analysis
-# Random effects model
+# NMA model
+# Fixed effects model
 model {                    # *** PROGRAMME STARTS
- for (j in 1:36) {         # LOOP THROUGH STUDIES
-  mu[j] ~ dnorm(0, 0.0001) # vague prior for trial baselines
-  }
- 
- for (k in 2:7) {          # LOOP THROUGH TREATMENTS
-  d[k] ~ dnorm(0, 0.0001)  # prior on treatment effects
-  OR[k] <- exp(d[k])           # LOR to OR
-  prob_harm[k] <- step(d[k])   # OR to p
+ for (i in 1:n_s) {        # LOOP THROUGH STUDIES
+  mu[i] ~ dnorm(0, 0.0001) # vague prior for i'th trial baselines
+  for (j in 1:n_a[i]) {
+   r[i, j] ~ dbin(p[i, j], n[i, j]) # binomial model
+   logit(p[i, j]) <- mu[i] + d[t[i, j]] - d[t[i, 1]] # model for linear y_hat
+   }
  }
- 
-  for (i in 1:73) {        # LOOP THROUGH DATA
-   r[i] ~ dbinom(p[i], n[i]) # binomial likelihood
-   logit(p[i]) <- mu[s[i]] + d[t[i]] - d[t_b[i]] # model for linear predictor
+  d[1] <- 0
+  for (k in 2:n_t) {
+   d[k] ~ dnorm(0, 0.0001) # vague priors for k treatment effects
   }
-  d[1] <- 0                # treatment effect is zero for reference treatment
 }                          # *** PROGRAMME ENDS
 
 

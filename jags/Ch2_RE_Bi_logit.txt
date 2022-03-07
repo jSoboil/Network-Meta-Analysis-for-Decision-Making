@@ -1,0 +1,23 @@
+# Binomial likelihood, logit link
+# NMA model
+# Random effects model
+model {                    # *** PROGRAMME STARTS
+ for (j in 1:36) {         # LOOP THROUGH STUDIES
+  mu[j] ~ dnorm(0, 0.0001) # vague prior for trial baselines
+  }
+ 
+ for (k in 2:7) {          # LOOP THROUGH TREATMENTS
+  d[k] ~ dnorm(0, 0.0001)  # prior on treatment effects
+  OR[k] <- exp(d[k])           # LOR to OR
+  prob_harm[k] <- step(d[k])   # OR to p
+ }
+ 
+  for (i in 1:73) {        # LOOP THROUGH DATA
+   w[t[i]] <- 0
+   r[i] ~ dbinom(p[i], n[i]) # binomial likelihood
+   logit(p[i]) <- mu[s[i]] + d[t[i]] - d[t_b[i]] # model for linear predictor
+  }
+  d[1] <- 0                # treatment effect is zero for reference treatment
+}                          # *** PROGRAMME ENDS
+
+
