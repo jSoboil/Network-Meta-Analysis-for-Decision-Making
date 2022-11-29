@@ -308,3 +308,5 @@ mcmc_areas(stan_RE_Bi_logit, pars = c("d[2]", "d[3]", "d[4]", "d[5]",
 sims_RE_Bi_logit <- rstan::extract(stan_RE_Bi_logit)
 # LORs that 1 > 4:
 mean(sims_RE_Bi_logit$d[, 1] > sims_RE_Bi_logit$d[, 4])
+
+# End file ----------------------------------------------------------------
