@@ -57,19 +57,19 @@ model {                    # *** PROGRAMME STARTS
 }                          # *** PROGRAMME ENDS
 
 "
-writeLines(text = Ch2_FE_Bi_logit_pair, con = "jags/Ch2_FE_Bi_logit_pair.txt")
+writeLines(text = Ch2_FE_Bi_logit_pair, 
+           con = "jags/02_JAGS/Ch2_FE_Bi_logit_pair.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit_pair.txt", 
+jags_Model <- jags(model.file = "jags/02_JAGS/Ch2_FE_Bi_logit_pair.txt", 
                    data = data_list, parameters.to.save = c(
                     "d", "OR", "prob_harm"))
 print(jags_Model)
 
 #### Stan model --------------------------------------------------------------
-stan_FE_Bi_logit_pair <- stan(file = "stan/Ch2_FE_Bi_logit_pair.stan",
+stan_FE_Bi_logit_pair <- stan(file = "stan/02_Stan/Ch2_FE_Bi_logit_pair.stan",
                               data = data_list, chains = 4,
                               pars = c("d", "OR", "prob_harm"), 
-                              control = list(adapt_delta = 0.9)
-                              )
+                              control = list(adapt_delta = 0.9))
 print(stan_FE_Bi_logit_pair)
 sims_stan_FE_Bi_logit_pair <- extract(stan_FE_Bi_logit_pair)
 hist(sims_stan_FE_Bi_logit_pair$d[, 2])
@@ -77,8 +77,6 @@ hist(sims_stan_FE_Bi_logit_pair$d[, 2])
 # Inspection:
 mcmc_dens(stan_FE_Bi_logit_pair, pars = "d[2]")
 mcmc_trace(stan_FE_Bi_logit_pair, pars = "d[2]")
-
-# Success! Both JAGS and Stan are giving similar output...
 
 ### Random effects ----------------------------------------------------------
 # In a random effects model, each study i provides an estimate of the 
@@ -114,15 +112,15 @@ model {                    # *** PROGRAMME STARTS
 }                          # *** PROGRAMME ENDS
 
 "
-writeLines(text = Ch2_RE_Bi_logit_pair, con = "jags/Ch2_RE_Bi_logit_pair.txt")
+writeLines(text = Ch2_RE_Bi_logit_pair, con = "jags/02_JAGS/Ch2_RE_Bi_logit_pair.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_RE_Bi_logit_pair.txt", 
+jags_Model <- jags(model.file = "jags/02_JAGS/Ch2_RE_Bi_logit_pair.txt", 
                    data = data_list, parameters.to.save = c(
                     "d", "OR", "prob_harm"))
 print(jags_Model)
 
 #### Stan model --------------------------------------------------------------
-stan_RE_Bi_logit_pair <- stan(file = "stan/Ch2_RE_Bi_logit_pair.stan",
+stan_RE_Bi_logit_pair <- stan(file = "stan/02_Stan/Ch2_RE_Bi_logit_pair.stan",
                               data = data_list, chains = 4,
                               pars = c("d", "OR", "prob_harm"),
                               control = list(adapt_delta = 0.9)
@@ -210,9 +208,9 @@ model {                    # *** PROGRAMME STARTS
 }                          # *** PROGRAMME ENDS
 
 "
-writeLines(text = Ch2_FE_Bi_logit, con = "jags/Ch2_FE_Bi_logit.txt")
+writeLines(text = Ch2_FE_Bi_logit, con = "jags/02_JAGS/Ch2_FE_Bi_logit.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_FE_Bi_logit.txt", 
+jags_Model <- jags(model.file = "jags/02_JAGS/Ch2_FE_Bi_logit.txt", 
                    data = data_list, parameters.to.save = c(
                     "d")
                    )
@@ -231,7 +229,7 @@ t[is.na(t)] <- -1
 data_list <- list(n_s = n_s, n_t = n_t, n_a = n_a, t = t, r = r, n = n, 
                   max_arms = max(n_a))
 
-stan_FE_Bi_logit <- stan(file = "stan/Ch2_FE_Bi_logit.stan",
+stan_FE_Bi_logit <- stan(file = "stan/02_Stan/Ch2_FE_Bi_logit.stan",
                          data = data_list, chains = 4,
                          pars = c("d", "OR")
                          )
@@ -284,7 +282,7 @@ model {                    # *** PROGRAMME STARTS
 "
 writeLines(text = Ch2_RE_Bi_logit, con = "jags/Ch2_RE_Bi_logit.txt")
 
-jags_Model <- jags(model.file = "jags/Ch2_RE_Bi_logit.txt", 
+jags_Model <- jags(model.file = "jags/02_JAGS/Ch2_RE_Bi_logit.txt", 
                    data = data_list, parameters.to.save = c(
                     "d")
                    )
@@ -298,7 +296,7 @@ t[is.na(t)] <- -1
 data_list <- list(n_s = n_s, n_t = n_t, n_a = n_a, t = t, r = r, n = n, 
                   max_arms = max(n_a))
 
-stan_RE_Bi_logit <- stan(file = "stan/Ch2_RE_Bi_logit.stan",
+stan_RE_Bi_logit <- stan(file = "stan/02_Stan/Ch2_RE_Bi_logit.stan",
                          data = data_list, chains = 4,
                          pars = c("d")
                          )
